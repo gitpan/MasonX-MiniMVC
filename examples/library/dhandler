@@ -1,12 +1,6 @@
 <%init>
-use MasonX::MiniMVC::Dispatcher;
-
-my $dispatcher = MasonX::MiniMVC::Dispatcher->new({
-    'author'              => 'Library::Controller::Author',
-    'book'                => 'Library::Controller::Book',
-    'book/recommendation' => 'Library::Controller::Book::Recommendation',
-});
-
-$dispatcher->dispatch($m, $m->dhandler_arg);
+use Library::Dispatcher;
+my $dispatcher = Library::Dispatcher->new();
+$dispatcher->dispatch($m);
 </%init>
 

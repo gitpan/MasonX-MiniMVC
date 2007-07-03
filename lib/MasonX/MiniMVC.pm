@@ -9,11 +9,11 @@ MasonX::MiniMVC - Very simple MVC framework for HTML::Mason
 
 =head1 VERSION
 
-Version 0.01
+Version 0.02
 
 =cut
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 SYNOPSIS
 
@@ -29,226 +29,208 @@ application logic in your components.  It's hard, too, to figure out how
 to lay out an application.  What do you put where?  How do you make
 something that's not a horrible spaghetti tangle?
 
-MasonX::MiniMVC is something that solves some of these problems for
-simple applications.  It provides:
+MasonX::MiniMVC is meant to solve most of these problems for simple
+applications.  It's essentially the simplest thing I could come up with
+that looks like MVC and stops your Mason components from becoming an
+unmanageable pile of cruft.
+
+=head2 Features
 
 =over 4
 
 =item *
 
-A convention for writing controller classes.
+A basic directory layout, showing you where to put stuff to keep it
+under control.
 
 =item *
 
-Views (actually, these are just HTML::Mason components in a known
-location).
+Attractive, clean URLs in the form
+http://example.com/foo/bar/baz. This hides implementation details (*.mhtml
+filenames) and makes the URLs more search-engine (and human) friendly
+than http://example.com/foo/bar.mhtml?id=baz.
 
 =item *
 
-A simple Dispatcher class to dispatch requests to appropriate
-controllers.
+Sample (albeit very slim) controller and model classes are provided.
 
 =item *
 
-Some suggestions about how to lay out your application.
+Views are simple Mason components.
 
 =back
 
-It does not provide:
+=head1 Non-features
 
-=over 4
+MasonX::MiniMVC isn't a full-blown MVC framework.  If you're looking for
+something heavyweight, try Catalyst.
 
-=item *
+MiniMVC also makes some Mason behaviours difficult or impossible.  (Most
+specifically, you just get one top-level autohandler.)
 
-Model classes or conventions -- just use Class::DBI, DBIx::Class, or
-whatever else you prefer.  (But we do have a recommended place to put
-them.)
-
-=item *
-
-Complex dispatching such as chained or regex dispatching.
-
-=item *
-
-Full support for every Mason behaviour.
-
-=back
-
-=head1 SETTING UP YOUR APPLICATION
+=head1 USING MINIMVC
 
 =head2 Installation
 
-First, install MasonX::MiniMVC.  I'll assume you've done that.
+First, install MasonX::MiniMVC.  I'll assume you've done that.  
 
-=head2 Check out the examples
+Then C<cd> into the directory where you want your application to be --
+probably your webserver's document root -- and run C<minimvc-install
+MyApp>, replacing "MyApp" with the name of your own application.  Since
+it'll be used as part of Perl module names, it needs to match C<^\w+$>.
 
-Everything that follows is demonstrated in the examples/library code
-provided with the MasonX::MiniMVC distribution. 
+This will create a basic layout for your app.  You should see output
+something like this:
 
-=head2 Application structure
+    Creating directory structure...
+      lib/
+      lib/MyApp/
+      lib/MyApp/Controller/
+      lib/MyApp/Model/
+      t/
+      view/
+      view/sample/
+    Creating stub/sample files...
+      dhandler
+      autohandler
+      index.mhtml
+      lib/MyApp/Dispatcher.pm
+      lib/MyApp/Controller/Sample.pm
+      lib/MyApp/Model/Sample.pm
+      t/controller_sample.t
+      t/model_sample.t
+      view/default.mhtml
+      view/sample/default.mhtml
+      .htaccess
+      view/.htaccess
+      lib/.htaccess
+      t/.htaccess
 
-Next, go to wherever you want to set up your web application and set up
-a directory structure that looks something like this:
-
-    lib/
-        AppName/ 
-            Controller/
-            Model/
-    t/
-    view/
-
-The purpose of these is as follows:
-
-=over 4
-
-=item lib
-
-Library directory for your application.
-
-=item lib/AppName
-
-All your application logic lives in here.  From an MVC point of view,
-this directory contains your Models and Controllers.
-
-=item lib/AppName/Controller
-
-Your controllers will live under this directory, one Perl module per
-controller.
-
-=item lib/AppName/Model
-
-Your data access and related logic will live here.  Use Class::DBI,
-DBIx::Class, or whatever suits you.
-
-=item t
-
-This directory contains automated tests for the libraries in lib/
-
-=item view/
-
-This is where you store Mason components used as top-level page views in
-your web app.  You can also include sub-components here in whatever way
-suits you.
-
-=back
-
-=head2 Configuring Apache and/or Mason
+=head2 Further setup
 
 =over 4
 
 =item *
 
-Set your DocumentRoot to the web/ directory you just created.
+Set up Apache to handle the directory using HTML::Mason.  The provided
+.htaccess file contains a "SetHandler" directive, but you might need to
+provide an "AddHandler" in your httpd.conf.
 
 =item *
 
-Set your ComponentRoot to the views/ directory.
-
-=item *
-
-Make sure your Mason setup allows you to use the libraries in lib/.
-
-=item *
-
-Make sure you have Mason handling everything in the directory, not just
-*.mhtml files.  You may need to "SetHandler mason-handler" or similar in
-your Apache config.
+Add library paths to the dhandler.  Currently there's an empty C<use
+lib>, but you probably need to add the path to your MiniMVC lib
+directory, i.e. C</some/directory/your-website/lib>.
 
 =back
 
-=head2 Create an autohandler
+If everything's set up right, you should now be able to point a browser
+at your application and see a stub/welcome page, with a link to a sample
+controller-generated page.
 
-You'll probably want an autohandler to provide the overall look and feel
-for your site.  Here's a basic one:
+=head1 APPLICATION DEVELOPMENT WITH MINIMVC
 
-    <html>
-    <head>
-    <title>My Site</title>
-    </head>
-    <body>
-
-    % $m->call_next();
-
-    </body>
-    </html>
-
-    <%init>
-    </%init>
-
-=head2 Create a dhandler
-
-You will definitely need a dhandler.  This is what dispatches things to
-the various controllers.  You'll want it to look something like this:
-
-    <%init>
-    use MasonX::MiniMVC::Dispatcher;
-
-    my $dispatcher = MasonX::MiniMVC::Dispatcher->new({
-        'author'              => 'Library::Controller::Author',
-        'book'                => 'Library::Controller::Book',
-        'book/recommendation' => 'Library::Controller::Book::Recommendation',
-    });
-
-    $dispatcher->dispatch($m);
-    </%init>
-
-Note that the dispatcher will pick the best (i.e. deepest) possible
-match from among the controllers you specify.  Order is unimportant.
-
-=head2 Create an index.mhtml front page
-
-The dhandler can't handle the very front page of your site, so you need
-to have an index.mhtml file in there.
-
-=head2 Create controller classes
-
-In the example given above, you'll want to create classes for
-Library::Book, Library::Book::Recommendation, and Library::Author.  Each of
-these B<must> contain the following methods:
+To build your application, the steps will be:
 
 =over 4
 
-=item default()
+=item 1.
 
-The default action to take for any given controller, to be shown when
-someone goes to http://example.com/book/ or http://example.com/author/
+Create model code in lib/MyApp/Model/, using Class::DBI, DBIx::Class, or
+whatever other kind of ORM you like to use.  This will connect to your
+database and provide an OO representation of the data.
 
-=back
+=item 2.
 
-Other controllers will correspond with part of the URL.  For instance,
-using the example above, a URL like http://example.com/book/search would
-call Library::Controller::Book::search().
+Create a structure for your website, mapping URLs to controllers.  Edit
+C<MyApp::Dispatcher> to create these mappings.  Typically you will create a
+controller for each "noun", eg. users, posts, comments, or whatever is
+appropriate to your site.
 
-A truly minimal controller method will look like this:
+Here's an example taken from the example "library" application that
+comes with the MiniMVC distribution:
 
-    sub search {
-        my ($self, $m, @args) = @_;
-        $m->comp("views/book/search.mhtml");
+    package Library::Dispatcher;
+
+    use base MasonX::MiniMVC::Dispatcher;
+
+    sub new {
+        my ($class) = @_;
+        my $self = $class->SUPER::new({
+            'author'              => 'Library::Controller::Author',
+            'book'                => 'Library::Controller::Book',
+            'book/recommendation' => 'Library::Controller::Book::Recommendation',
+        });
     }
 
-If the URL appears deeper, eg. http://example.com/book/view/12345, then
-Library::Controller::Book::view() is called and "12345" is passed in as part of the
-parameters.  To put it another way: the dispatcher will find the deepest
-possible match available, strip off the matched part, and turn any
-further parts of dhandler_arg into a list of args for the controller
-method.
+    1;
 
-Here's an example view() method for http://example.com/book/view/12345:
+=item 3.
+
+Create controller classes for each item you listed in C<dhandler>.  Just
+copy C<MyApp/Controller/Sample.pm> and edit appropriately.  Each
+controller must have at least a C<default()> method, used to show the
+"top level" page for that part of the site.
+
+Here's an example C<default()> method:
+
+    sub default {
+        my ($self, $m, @args) = @_;
+        $m->comp("view/book/default.mhtml");
+    }
+
+
+=item 4.
+
+Add methods as you see fit.  For instance, you might have a C<Post.pm>
+and create methods such as C<new()>, C<edit()>, C<view()>, etc.  A
+HTTP request to http://example.com/post/new will call
+C<MyApp::Post::new()>.  A request to http://example.com/post/view/42
+will call C<MyApp::Post::view()> with 42 passed in as an argument.
+
+Here's an example of a method that fetches data using the Model
+classes, and displays the details:
 
     sub view {
-        my ($self, $m, $book_id) = @_;
-        my $book = Library::Model::Book->fetch($book_id);
-        $m->comp("views/book/view.mhtml", book => $book);
+        my ($self, $m, $id) = @_;
+        my $book = Library::Model::Book->fetch($id);
+        $m->comp("view/book/view.mhtml", book => $book);
     }
 
-=head2 Prevent access to sensitive directories
+=item 5.
 
-You probably want to use .htaccess to prevent people getting at lib/,
-t/, view/, and the autohandler and dhandler from the browser.
+As you've seen in the previous steps, the webpage output is done through
+a view file.  These live in C<view/>, and are displayed by calling
+C<<$m->comp($view)>> from within the controller code.
+You can pass args through C<<$m->comp()>> and they'll be accessible via
+the Mason <%args> section in the view.
 
-=head1 THESE THINGS DO NOT WORK
+Using the above example, your book view might look like this:
 
-The following are unimplemented or simply known not to work.
+    <%args>
+    $book
+    </%args>
+
+    <h1><% $book->title %></h1>
+    <p>
+    Author: <% $book->author->name() %>
+    </p>
+
+=back
+
+A fairly detailed sample application can be found in
+C<examples/library/>, in the MiniMVC CPAN distribution.
+
+For more examples, see L<MasonX::MiniMVC::Cookbook>.
+
+=head1 AUTHOR
+
+Kirrily "Skud" Robert, C<< <skud at cpan.org> >>
+
+=head1 BUGS
+
+The following are unimplemented or simply known not to work.  It's early
+days yet.  Comments welcome, though.
 
 =head2 autohandlers below the top level
 
@@ -257,15 +239,12 @@ below that.
 
 =head2 404s
 
-I've got it doing a $m->clear_and_abort(404) if it can't find a
+I've got it doing a C<<$m->clear_and_abort(404)>> if it can't find a
 controller for a URL, but it doesn't work for me under
-HTML::Mason::CGIHandler.  Help wanted!
+HTML::Mason::CGIHandler.  Don't know whether or not it works under
+full-blown mod_perl Mason, though.  Help wanted!
 
-=head1 AUTHOR
-
-Kirrily "Skud" Robert, C<< <skud at cpan.org> >>
-
-=head1 BUGS
+=head2 Other
 
 Please report any bugs or feature requests to
 C<bug-masonx-minimvc at rt.cpan.org>, or through the web interface at
@@ -302,6 +281,10 @@ L<http://search.cpan.org/dist/MasonX-MiniMVC>
 =back
 
 =head1 ACKNOWLEDGEMENTS
+
+Thanks to:
+
+Paul Fenwick for the autohandler hack to support notes().
 
 =head1 COPYRIGHT & LICENSE
 

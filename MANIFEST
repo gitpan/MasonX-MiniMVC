@@ -4,7 +4,10 @@ MANIFEST
 META.yml # Will be created by "make dist"
 README
 lib/MasonX/MiniMVC.pm
+lib/MasonX/MiniMVC/Cookbook.pm
 lib/MasonX/MiniMVC/Dispatcher.pm
+lib/MasonX/MiniMVC/Installer.pm
+script/minimvc-install
 t/00-load.t
 t/boilerplate.t
 t/pod-coverage.t
@@ -12,12 +15,10 @@ t/pod.t
 examples/library/autohandler
 examples/library/dhandler
 examples/library/index.mhtml
-examples/library/lib/Library/Controller/Book
 examples/library/lib/Library/Controller/Book/Recommendation.pm
 examples/library/lib/Library/Controller/Book.pm
 examples/library/lib/Library/Controller/Author.pm
 examples/library/lib/Library/Model/README
-examples/library/view/book/recommendation
 examples/library/view/book/recommendation/default.mhtml
 examples/library/view/book/recommendation/view.mhtml
 examples/library/view/book/default.mhtml
